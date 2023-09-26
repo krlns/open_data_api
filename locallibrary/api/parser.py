@@ -1,25 +1,21 @@
 import requests
-import os
-import sys
-import django
-from django.db import DatabaseError
+from django.db import DatabaseError, connection
 from .models import Cinema
-
-proj = os.path.dirname(os.path.abspath(__file__))
-sys.path.append(proj)
-os.environ['DJANGO_SETTINGS_MODULE'] = 'locallibrary.settings'
-django.setup()
-
-#from locallibrary.api.models import Cinema
 
 
 url = "https://opendata.mkrf.ru/v2/cinema/86?l=150"
 headers = {"X-API-KEY": "bd642ee6d25320d7e24f87bd51e345cfcad7f7532de0197452fcdc19c1351e1d"}
 
-response = requests.get(url, headers=headers).json()
+
+def check_table_exits():
+    table_names = connection.introspection.table_names()
+    if "api_cinema" in table_names and len(Cinema.objects.values()) == 0:
+        parse_and_adding()
 
 
 def parse_and_adding():
+    response = requests.get(url, headers=headers).json()
+
     def data_checking() -> bool:
         if 'contacts' in data['data']['general'] \
                 and 'email' in data['data']['general']['contacts'] \
